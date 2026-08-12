@@ -47,7 +47,7 @@ export default async function SessionSummaryPage({ params }: Props) {
     <>
       <AppHeader />
       <main
-        className="mx-auto w-full max-w-5xl space-y-6 px-6 py-10"
+        className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8"
         crux-attr="ex-158737"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -55,7 +55,7 @@ export default async function SessionSummaryPage({ params }: Props) {
             <p className="text-sm text-muted-foreground">
               {session.clientName} · {session.studyName}
             </p>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="text-[28px] font-semibold tracking-tight">
               Session with {session.participantName}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -118,7 +118,7 @@ export default async function SessionSummaryPage({ params }: Props) {
                       <span
                         className={
                           response.mainCovered
-                            ? "mt-0.5 text-emerald-600"
+                            ? "mt-0.5 text-success"
                             : "mt-0.5 text-muted-foreground/40"
                         }
                       >
@@ -138,7 +138,7 @@ export default async function SessionSummaryPage({ params }: Props) {
                             <span
                               className={
                                 response.coveredSubQuestions[subIndex]
-                                  ? "text-emerald-600"
+                                  ? "text-success"
                                   : "text-muted-foreground/40"
                               }
                             >

@@ -8,10 +8,10 @@ export default function NewStudyPage() {
   return (
     <>
       <AppHeader />
-      <main className="mx-auto w-full max-w-5xl px-6 py-10" crux-attr="ex-860922">
+      <main className="mx-auto w-full max-w-5xl px-6 py-8" crux-attr="ex-860922">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="text-[28px] font-semibold tracking-tight">
               Create study
             </h1>
             <p className="mt-1 text-muted-foreground">

@@ -19,10 +19,10 @@ export default async function EditStudyPage({ params }: Props) {
   return (
     <>
       <AppHeader />
-      <main className="mx-auto w-full max-w-5xl px-6 py-10">
+      <main className="mx-auto w-full max-w-5xl px-6 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="text-[28px] font-semibold tracking-tight">
               Edit study script
             </h1>
             <p className="mt-1 text-muted-foreground">

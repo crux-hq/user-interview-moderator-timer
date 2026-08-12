@@ -35,13 +35,13 @@ export default async function StudyDetailPage({ params }: Props) {
     <>
       <AppHeader />
       <main
-        className="mx-auto w-full max-w-5xl space-y-8 px-6 py-10"
+        className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8"
         crux-attr="ex-118017"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-muted-foreground">{study.clientName}</p>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="text-[28px] font-semibold tracking-tight">
               {study.studyName}
             </h1>
             <div className="mt-2 flex gap-2">

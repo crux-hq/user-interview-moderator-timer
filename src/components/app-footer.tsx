@@ -4,7 +4,7 @@ const DONATE_URL =
 export function AppFooter() {
   return (
     <footer className="mt-auto border-t" crux-attr="ex-954028">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-6 py-4 text-sm text-muted-foreground">
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2 px-6 py-3 text-xs text-muted-foreground">
         <span>Interview Moderator Timer</span>
         <a
           href={DONATE_URL}

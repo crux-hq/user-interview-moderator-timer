@@ -37,15 +37,15 @@ function TimerChip({
   return (
     <div
       className={cn(
-        "rounded-lg border px-4 py-2 min-w-[140px]",
-        tone === "ok" && "bg-background",
-        tone === "warn" && "border-amber-400 bg-amber-50 text-amber-950",
-        tone === "danger" && "border-red-400 bg-red-50 text-red-950",
-        tone === "overtime" && "border-red-600 bg-red-100 text-red-950",
+        "rounded-lg border px-3 py-2 min-w-[120px]",
+        tone === "ok" && "bg-card",
+        tone === "warn" && "border-warn bg-[#fffbeb] text-warn-foreground",
+        tone === "danger" && "border-destructive bg-[#fef2f2] text-destructive",
+        tone === "overtime" && "border-destructive bg-[#fee2e2] text-destructive",
       )}
     >
-      <div className="text-xs uppercase tracking-wide opacity-70">{label}</div>
-      <div className="font-mono text-2xl font-semibold tabular-nums">
+      <div className="text-[12px] font-medium uppercase tracking-wide opacity-70">{label}</div>
+      <div className="font-mono text-[22px] font-semibold tabular-nums leading-none">
         {formatCountdown(remaining)}
       </div>
     </div>
@@ -199,7 +199,7 @@ export function SessionRunner({
         <div className="flex-1 space-y-6">
           {slide.kind === "context" && (
             <>
-              <h1 className="text-3xl font-semibold tracking-tight">
+              <h1 className="text-[28px] font-semibold tracking-tight">
                 Context setting
               </h1>
               <p className="whitespace-pre-wrap text-lg leading-relaxed text-muted-foreground">
@@ -219,7 +219,7 @@ export function SessionRunner({
 
           {slide.kind === "warmup" && (
             <>
-              <h1 className="text-3xl font-semibold tracking-tight">Warm-up</h1>
+              <h1 className="text-[28px] font-semibold tracking-tight">Warm-up</h1>
               <p className="whitespace-pre-wrap text-lg leading-relaxed text-muted-foreground">
                 {study.warmupGuide || "No warm-up guide written for this study."}
               </p>
@@ -262,13 +262,13 @@ export function SessionRunner({
                   className={cn(
                     "mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border",
                     mainCovered[slide.question.id]
-                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      ? "border-success bg-success text-white"
                       : "border-muted-foreground/40 text-transparent",
                   )}
                 >
                   <Check className="size-4" />
                 </span>
-                <h1 className="text-3xl font-semibold tracking-tight">
+                <h1 className="text-[28px] font-semibold tracking-tight">
                   {slide.question.questionText}
                 </h1>
               </button>
@@ -305,7 +305,7 @@ export function SessionRunner({
                               className={cn(
                                 "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
                                 covered
-                                  ? "border-emerald-600 bg-emerald-600 text-white"
+                                  ? "border-success bg-success text-white"
                                   : "border-muted-foreground/40 text-transparent",
                               )}
                             >

@@ -40,7 +40,7 @@ function MiniWindow({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none overflow-hidden rounded-xl border bg-background shadow-sm"
+      className="pointer-events-none overflow-hidden rounded-[10px] border bg-card shadow-sm"
     >
       <div className="flex items-center gap-2 border-b bg-muted/50 px-3 py-2">
         <span className="size-2 rounded-full bg-border" />
@@ -190,7 +190,7 @@ function CheckRow({
         className={cn(
           "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border",
           done
-            ? "border-emerald-600 bg-emerald-600 text-white"
+            ? "border-success bg-success text-white"
             : "border-muted-foreground/40 text-transparent",
         )}
       >
@@ -222,7 +222,7 @@ function LiveSessionMock() {
               42:18
             </div>
           </div>
-          <div className="min-w-[72px] rounded-md border border-amber-400 bg-amber-50 px-2 py-1 text-amber-950">
+          <div className="min-w-[72px] rounded-md border border-warn bg-[#fffbeb] px-2 py-1 text-warn-foreground">
             <div className="text-[9px] uppercase tracking-wide opacity-70">
               This section
             </div>
@@ -251,8 +251,8 @@ function LiveSessionMock() {
 export function HowItWorks() {
   return (
     <section className="mt-20 border-t pt-16" crux-attr="ex-709754">
-      <h2 className="text-2xl font-semibold tracking-tight">How it works</h2>
-      <p className="mt-2 max-w-xl text-muted-foreground">
+      <h2 className="text-[28px] font-semibold tracking-tight">How it works</h2>
+      <p className="mt-2 max-w-xl text-base text-muted-foreground">
         Five steps. Write the script once. Run it with each person.
       </p>
       <ol className="mt-10 space-y-12">
@@ -270,7 +270,7 @@ export function HowItWorks() {
                   {step.title}
                 </h3>
               </div>
-              <p className="mt-2 pl-11 text-muted-foreground">{step.body}</p>
+              <p className="mt-2 pl-11 text-base text-muted-foreground">{step.body}</p>
             </div>
             <div className={index % 2 === 1 ? "md:order-1" : undefined}>
               {step.mock}

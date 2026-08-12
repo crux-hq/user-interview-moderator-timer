@@ -19,10 +19,10 @@ export default async function DashboardPage() {
   return (
     <>
       <AppHeader />
-      <main className="mx-auto w-full max-w-5xl px-6 py-10" crux-attr="ex-501843">
+      <main className="mx-auto w-full max-w-5xl px-6 py-8" crux-attr="ex-501843">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Studies</h1>
+            <h1 className="text-[28px] font-semibold tracking-tight">Studies</h1>
             <p className="mt-1 text-muted-foreground">
               Create interview scripts, add participants, and run timed sessions.
             </p>

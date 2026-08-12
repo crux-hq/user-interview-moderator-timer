@@ -9,18 +9,18 @@ export default function LandingPage() {
     <>
       <AppHeader />
       <main
-        className="mx-auto w-full max-w-5xl flex-1 px-6 py-16"
+        className="mx-auto w-full max-w-5xl flex-1 px-6 py-12"
         crux-attr="ex-437414"
       >
-        <section className="max-w-2xl pt-8">
-          <h1 className="text-4xl font-semibold tracking-tight">
+        <section className="max-w-[42rem] pt-6">
+          <h1 className="text-[36px] font-semibold leading-tight tracking-tight">
             Keep time in user interviews
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-4 text-base text-muted-foreground">
             Write your script. Add the people you will talk to. Run a timer while
             you talk.
           </p>
-          <p className="mt-3 text-muted-foreground">Free to use.</p>
+          <p className="mt-3 text-base text-muted-foreground">Free to use.</p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               href="/sign-up"
