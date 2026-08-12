@@ -350,15 +350,21 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
                       <div className="space-y-2">
                         <Label>Sub-questions (optional)</Label>
                         <Textarea
-                          rows={3}
+                          rows={5}
                           value={question.subQuestions}
                           onChange={(e) =>
                             updateQuestion(sectionIndex, questionIndex, {
                               subQuestions: e.target.value,
                             })
                           }
-                          placeholder="Follow-ups and probes…"
+                          placeholder={
+                            "One sub-question per line…\nWhat happened next?\nHow did that feel?"
+                          }
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Paste or type multiple lines — each line becomes its
+                          own sub-question.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label>Moderator notes (optional)</Label>

@@ -244,10 +244,12 @@ export default async function StudyDetailPage({ params }: Props) {
                         <p className="font-medium">
                           Q{questionIndex + 1}. {question.questionText}
                         </p>
-                        {question.subQuestions && (
-                          <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
-                            {question.subQuestions}
-                          </p>
+                        {question.subQuestions.length > 0 && (
+                          <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                            {question.subQuestions.map((sub, subIndex) => (
+                              <li key={`${question.id}-${subIndex}`}>{sub}</li>
+                            ))}
+                          </ul>
                         )}
                       </li>
                     ))}

@@ -12,11 +12,13 @@ import {
   sessions,
   studies,
 } from "@/db/schema";
+import { parseSubQuestions } from "@/lib/sub-questions";
 
 export type QuestionInput = {
   id?: string;
   questionText: string;
   moderatorNotes: string;
+  /** Bulk textarea value: one sub-question per line. */
   subQuestions: string;
 };
 
@@ -50,7 +52,7 @@ export type StudySection = {
     sortOrder: number;
     questionText: string;
     moderatorNotes: string;
-    subQuestions: string;
+    subQuestions: string[];
   }[];
 };
 
@@ -72,7 +74,12 @@ async function loadStudySections(studyId: string): Promise<StudySection[]> {
 
   return studySections.map((section) => ({
     ...section,
-    questions: studyQuestions.filter((q) => q.sectionId === section.id),
+    questions: studyQuestions
+      .filter((q) => q.sectionId === section.id)
+      .map((q) => ({
+        ...q,
+        subQuestions: Array.isArray(q.subQuestions) ? q.subQuestions : [],
+      })),
   }));
 }
 
@@ -108,7 +115,7 @@ async function saveStudySections(studyId: string, inputSections: SectionInput[])
         sortOrder: questionIndex,
         questionText: question.questionText,
         moderatorNotes: question.moderatorNotes,
-        subQuestions: question.subQuestions,
+        subQuestions: parseSubQuestions(question.subQuestions),
       })),
     );
   }
@@ -277,7 +284,12 @@ export async function completeSession(input: {
   startedAt: string;
   contextNotes: string;
   warmupNotes: string;
-  responses: { questionId: string; responseText: string }[];
+  responses: {
+    questionId: string;
+    responseText: string;
+    mainCovered: boolean;
+    coveredSubQuestions: boolean[];
+  }[];
 }) {
   const [session] = await db
     .insert(sessions)
@@ -297,6 +309,8 @@ export async function completeSession(input: {
         sessionId: session.id,
         questionId: r.questionId,
         responseText: r.responseText,
+        mainCovered: r.mainCovered,
+        coveredSubQuestions: r.coveredSubQuestions,
       })),
     );
   }
@@ -334,6 +348,8 @@ export async function getSessionSummary(sessionId: string) {
       id: questionResponses.id,
       questionId: questionResponses.questionId,
       responseText: questionResponses.responseText,
+      mainCovered: questionResponses.mainCovered,
+      coveredSubQuestions: questionResponses.coveredSubQuestions,
       questionText: questions.questionText,
       subQuestions: questions.subQuestions,
       moderatorNotes: questions.moderatorNotes,
@@ -351,6 +367,12 @@ export async function getSessionSummary(sessionId: string) {
 
   return {
     ...session,
-    responses: responseRows,
+    responses: responseRows.map((row) => ({
+      ...row,
+      subQuestions: Array.isArray(row.subQuestions) ? row.subQuestions : [],
+      coveredSubQuestions: Array.isArray(row.coveredSubQuestions)
+        ? row.coveredSubQuestions
+        : [],
+    })),
   };
 }

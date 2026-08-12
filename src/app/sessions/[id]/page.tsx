@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+// CardDescription still used for context/warmup cards
 import { buttonVariants } from "@/components/ui/button";
 import { getSessionSummary } from "@/lib/actions";
 import { cn } from "@/lib/utils";
@@ -114,13 +115,40 @@ export default async function SessionSummaryPage({ params }: Props) {
               {group.items.map((response, index) => (
                 <Card key={response.id}>
                   <CardHeader>
-                    <CardTitle className="text-base">
-                      Q{index + 1}. {response.questionText}
+                    <CardTitle className="flex items-start gap-2 text-base">
+                      <span
+                        className={
+                          response.mainCovered
+                            ? "mt-0.5 text-emerald-600"
+                            : "mt-0.5 text-muted-foreground/40"
+                        }
+                      >
+                        ✓
+                      </span>
+                      <span>
+                        Q{index + 1}. {response.questionText}
+                      </span>
                     </CardTitle>
-                    {response.subQuestions && (
-                      <CardDescription className="whitespace-pre-wrap">
-                        {response.subQuestions}
-                      </CardDescription>
+                    {response.subQuestions.length > 0 && (
+                      <ul className="mt-2 space-y-1.5">
+                        {response.subQuestions.map((sub, subIndex) => (
+                          <li
+                            key={`${response.id}-sub-${subIndex}`}
+                            className="flex items-start gap-2 text-sm text-muted-foreground"
+                          >
+                            <span
+                              className={
+                                response.coveredSubQuestions[subIndex]
+                                  ? "text-emerald-600"
+                                  : "text-muted-foreground/40"
+                              }
+                            >
+                              ✓
+                            </span>
+                            <span>{sub}</span>
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </CardHeader>
                   <CardContent>

@@ -86,6 +86,8 @@ export function SessionRunner({
   const [contextNotes, setContextNotes] = useState("");
   const [warmupNotes, setWarmupNotes] = useState("");
   const [responses, setResponses] = useState<Record<string, string>>({});
+  const [mainCovered, setMainCovered] = useState<Record<string, boolean>>({});
+  const [subCovered, setSubCovered] = useState<Record<string, boolean[]>>({});
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const previousSectionId = useRef<string | null>(null);
@@ -129,6 +131,10 @@ export function SessionRunner({
             section.questions.map((question) => ({
               questionId: question.id,
               responseText: responses[question.id] ?? "",
+              mainCovered: mainCovered[question.id] ?? false,
+              coveredSubQuestions:
+                subCovered[question.id] ??
+                question.subQuestions.map(() => false),
             })),
           ),
         });
@@ -241,19 +247,81 @@ export function SessionRunner({
                   </p>
                 )}
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight">
-                {slide.question.questionText}
-              </h1>
-              {slide.question.subQuestions && (
-                <div>
-                  <div className="mb-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMainCovered((prev) => ({
+                    ...prev,
+                    [slide.question.id]: !prev[slide.question.id],
+                  }))
+                }
+                className="flex w-full items-start gap-3 rounded-lg border px-3 py-3 text-left transition-colors hover:bg-muted/40"
+              >
+                <span
+                  className={cn(
+                    "mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border",
+                    mainCovered[slide.question.id]
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-muted-foreground/40 text-transparent",
+                  )}
+                >
+                  <Check className="size-4" />
+                </span>
+                <h1 className="text-3xl font-semibold tracking-tight">
+                  {slide.question.questionText}
+                </h1>
+              </button>
+
+              {slide.question.subQuestions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                     Sub-questions
                   </div>
-                  <p className="whitespace-pre-wrap text-base leading-relaxed">
-                    {slide.question.subQuestions}
-                  </p>
+                  <ul className="space-y-2">
+                    {slide.question.subQuestions.map((subQuestion, subIndex) => {
+                      const covered =
+                        subCovered[slide.question.id]?.[subIndex] ?? false;
+                      return (
+                        <li key={`${slide.question.id}-${subIndex}`}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSubCovered((prev) => {
+                                const current =
+                                  prev[slide.question.id] ??
+                                  slide.question.subQuestions.map(() => false);
+                                const next = [...current];
+                                next[subIndex] = !next[subIndex];
+                                return {
+                                  ...prev,
+                                  [slide.question.id]: next,
+                                };
+                              })
+                            }
+                            className="flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                          >
+                            <span
+                              className={cn(
+                                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
+                                covered
+                                  ? "border-emerald-600 bg-emerald-600 text-white"
+                                  : "border-muted-foreground/40 text-transparent",
+                              )}
+                            >
+                              <Check className="size-3.5" />
+                            </span>
+                            <span className="text-base leading-relaxed">
+                              {subQuestion}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               )}
+
               {slide.question.moderatorNotes && (
                 <div className="rounded-lg border bg-muted/40 p-4">
                   <div className="mb-1 text-sm font-medium">Moderator notes</div>

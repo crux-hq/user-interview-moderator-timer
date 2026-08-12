@@ -1,6 +1,8 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -50,7 +52,7 @@ export const questions = pgTable("questions", {
   sortOrder: integer("sort_order").notNull().default(0),
   questionText: text("question_text").notNull().default(""),
   moderatorNotes: text("moderator_notes").notNull().default(""),
-  subQuestions: text("sub_questions").notNull().default(""),
+  subQuestions: jsonb("sub_questions").$type<string[]>().notNull().default([]),
 });
 
 export const sessions = pgTable("sessions", {
@@ -78,6 +80,11 @@ export const questionResponses = pgTable("question_responses", {
     .notNull()
     .references(() => questions.id, { onDelete: "cascade" }),
   responseText: text("response_text").notNull().default(""),
+  mainCovered: boolean("main_covered").notNull().default(false),
+  coveredSubQuestions: jsonb("covered_sub_questions")
+    .$type<boolean[]>()
+    .notNull()
+    .default([]),
 });
 
 export const studiesRelations = relations(studies, ({ many }) => ({

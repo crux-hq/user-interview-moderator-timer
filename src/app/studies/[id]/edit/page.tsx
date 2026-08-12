@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { StudyWizard } from "@/components/study-wizard";
 import { buttonVariants } from "@/components/ui/button";
 import { getStudy } from "@/lib/actions";
+import { formatSubQuestions } from "@/lib/sub-questions";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -58,7 +59,7 @@ export default async function EditStudyPage({ params }: Props) {
                       id: question.id,
                       questionText: question.questionText,
                       moderatorNotes: question.moderatorNotes,
-                      subQuestions: question.subQuestions,
+                      subQuestions: formatSubQuestions(question.subQuestions),
                     }))
                   : [
                       {
