@@ -219,7 +219,7 @@ export async function createStudy(input: StudyInput) {
     await saveStudySections(study.id, input.sections);
   }
 
-  revalidatePath("/");
+  revalidatePath("/studies");
   redirect(`/studies/${study.id}`);
 }
 
@@ -231,7 +231,7 @@ export async function updateStudy(studyId: string, input: StudyInput) {
     .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)))
     .limit(1);
   if (!owned) {
-    redirect("/");
+    redirect("/studies");
   }
 
   await db
@@ -247,7 +247,7 @@ export async function updateStudy(studyId: string, input: StudyInput) {
 
   await saveStudySections(studyId, input.sections);
 
-  revalidatePath("/");
+  revalidatePath("/studies");
   revalidatePath(`/studies/${studyId}`);
   redirect(`/studies/${studyId}`);
 }
@@ -257,8 +257,8 @@ export async function deleteStudy(studyId: string) {
   await db
     .delete(studies)
     .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)));
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/studies");
+  redirect("/studies");
 }
 
 export async function addParticipant(
@@ -327,7 +327,7 @@ export async function completeSession(input: {
     .where(and(eq(studies.id, input.studyId), eq(studies.userId, currentUser.id)))
     .limit(1);
   if (!owned) {
-    redirect("/");
+    redirect("/studies");
   }
 
   const [session] = await db

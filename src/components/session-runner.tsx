@@ -153,7 +153,7 @@ export function SessionRunner({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-3">
           <div>

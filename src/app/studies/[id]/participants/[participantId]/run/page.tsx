@@ -12,7 +12,7 @@ export default async function RunSessionPage({ params }: Props) {
   if (!data) notFound();
 
   return (
-    <div crux-attr="ex-283390">
+    <div className="flex min-h-0 flex-1 flex-col" crux-attr="ex-283390">
       <SessionRunner study={data.study} participant={data.participant} />
     </div>
   );

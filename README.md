@@ -58,7 +58,7 @@ psql "$DATABASE_URL" -f drizzle/init.sql
 ## Flow
 
 1. **Sign in / create account**
-2. **Dashboard** — create and open studies
+2. **Studies** — create and open studies
 3. **Study builder** — client/study name, session duration, context + warm-up guides, nested sections and questions (sections can be collapsed while editing)
 4. **Study detail** — add participants; start a session for a specific person
 5. **Live session** — overall timer + per-section timer, check off questions as you cover them

@@ -45,7 +45,7 @@ export function AuthForm({ mode }: Props) {
           return;
         }
       }
-      router.push("/");
+      router.push("/studies");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -100,7 +100,7 @@ export function AuthForm({ mode }: Props) {
             ? "Creating account…"
             : "Signing in…"
           : mode === "sign-up"
-            ? "Create account"
+            ? "Register for free"
             : "Sign in"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
@@ -115,7 +115,7 @@ export function AuthForm({ mode }: Props) {
           <>
             New here?{" "}
             <Link href="/sign-up" className="text-foreground underline">
-              Create an account
+              Register for free
             </Link>
           </>
         )}

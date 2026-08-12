@@ -19,7 +19,7 @@ export default function NewStudyPage() {
             </p>
           </div>
           <Link
-            href="/"
+            href="/studies"
             className={cn(buttonVariants({ variant: "outline" }), "inline-flex")}
           >
             Cancel

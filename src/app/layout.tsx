@@ -1,3 +1,4 @@
+import { AppFooter } from "@/components/app-footer";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -14,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Interview Moderator Timer",
-  description: "Design and run timed user interview sessions",
+  description: "A simple timer for people who run user interviews.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -24,7 +25,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
-        {children}
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <AppFooter />
       </body>
     </html>
   );

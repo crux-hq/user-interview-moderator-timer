@@ -65,10 +65,10 @@ export default async function StudyDetailPage({ params }: Props) {
               Edit script
             </Link>
             <Link
-              href="/"
+              href="/studies"
               className={cn(buttonVariants({ variant: "ghost" }), "inline-flex")}
             >
-              Dashboard
+              Studies
             </Link>
           </div>
         </div>
