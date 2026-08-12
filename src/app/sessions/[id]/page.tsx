@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// CardDescription still used for context/warmup cards
 import { buttonVariants } from "@/components/ui/button";
 import { getSessionSummary } from "@/lib/actions";
 import { cn } from "@/lib/utils";

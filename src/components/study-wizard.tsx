@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Trash2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,14 @@ const emptySection = (): SectionInput => ({
   questions: [emptyQuestion()],
 });
 
+function isSectionComplete(section: SectionInput) {
+  return (
+    Boolean(section.title.trim()) &&
+    section.questions.length > 0 &&
+    section.questions.every((q) => q.questionText.trim())
+  );
+}
+
 const defaultInitial: StudyInput = {
   clientName: "",
   studyName: "",
@@ -46,6 +54,9 @@ const defaultInitial: StudyInput = {
 export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<StudyInput>(initial);
+  const [collapsed, setCollapsed] = useState<boolean[]>(
+    () => initial.sections.map((section) => isSectionComplete(section)),
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -246,27 +257,82 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
 
       {step === 3 && (
         <div className="space-y-4">
-          {form.sections.map((section, sectionIndex) => (
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setCollapsed(form.sections.map(() => false))
+              }
+            >
+              Expand all
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                setCollapsed(form.sections.map(() => true))
+              }
+            >
+              Collapse all
+            </Button>
+          </div>
+          {form.sections.map((section, sectionIndex) => {
+            const isCollapsed = collapsed[sectionIndex] ?? false;
+            return (
             <Card key={sectionIndex}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-base">
-                  Section {sectionIndex + 1}
-                </CardTitle>
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  onClick={() =>
+                    setCollapsed((prev) =>
+                      form.sections.map((_, i) =>
+                        i === sectionIndex
+                          ? !(prev[i] ?? false)
+                          : (prev[i] ?? false),
+                      ),
+                    )
+                  }
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="size-4 shrink-0" />
+                  ) : (
+                    <ChevronDown className="size-4 shrink-0" />
+                  )}
+                  <CardTitle className="truncate text-base">
+                    Section {sectionIndex + 1}
+                    {section.title ? `: ${section.title}` : ""}
+                  </CardTitle>
+                  {isCollapsed && (
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {section.questions.length} question
+                      {section.questions.length === 1 ? "" : "s"}
+                      {isSectionComplete(section) ? " · complete" : ""}
+                    </span>
+                  )}
+                </button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
                   disabled={form.sections.length === 1}
-                  onClick={() =>
+                  onClick={() => {
                     setForm((prev) => ({
                       ...prev,
                       sections: prev.sections.filter((_, i) => i !== sectionIndex),
-                    }))
-                  }
+                    }));
+                    setCollapsed((prev) =>
+                      prev.filter((_, i) => i !== sectionIndex),
+                    );
+                  }}
                 >
                   <Trash2 className="size-4" />
                 </Button>
               </CardHeader>
+              {!isCollapsed && (
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
                   <div className="space-y-2">
@@ -396,17 +462,25 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
                   </Button>
                 </div>
               </CardContent>
+              )}
             </Card>
-          ))}
+            );
+          })}
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
+            onClick={() => {
+              setCollapsed((prev) => [
+                ...form.sections.map((section, i) =>
+                  isSectionComplete(section) ? true : (prev[i] ?? false),
+                ),
+                false,
+              ]);
               setForm((prev) => ({
                 ...prev,
                 sections: [...prev.sections, emptySection()],
-              }))
-            }
+              }));
+            }}
           >
             <Plus className="size-4" />
             Add section

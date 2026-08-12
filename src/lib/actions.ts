@@ -13,6 +13,7 @@ import {
   studies,
 } from "@/db/schema";
 import { parseSubQuestions } from "@/lib/sub-questions";
+import { requireUser } from "@/lib/session";
 
 export type QuestionInput = {
   id?: string;
@@ -122,6 +123,7 @@ async function saveStudySections(studyId: string, inputSections: SectionInput[])
 }
 
 export async function listStudies() {
+  const currentUser = await requireUser();
   return db
     .select({
       id: studies.id,
@@ -133,15 +135,17 @@ export async function listStudies() {
     })
     .from(studies)
     .leftJoin(participants, eq(participants.studyId, studies.id))
+    .where(eq(studies.userId, currentUser.id))
     .groupBy(studies.id)
     .orderBy(desc(studies.createdAt));
 }
 
 export async function getStudy(studyId: string) {
+  const currentUser = await requireUser();
   const [study] = await db
     .select()
     .from(studies)
-    .where(eq(studies.id, studyId))
+    .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)))
     .limit(1);
 
   if (!study) return null;
@@ -198,9 +202,11 @@ export async function getStudyDetail(studyId: string) {
 }
 
 export async function createStudy(input: StudyInput) {
+  const currentUser = await requireUser();
   const [study] = await db
     .insert(studies)
     .values({
+      userId: currentUser.id,
       clientName: input.clientName.trim(),
       studyName: input.studyName.trim(),
       sessionDurationMinutes: input.sessionDurationMinutes,
@@ -218,6 +224,16 @@ export async function createStudy(input: StudyInput) {
 }
 
 export async function updateStudy(studyId: string, input: StudyInput) {
+  const currentUser = await requireUser();
+  const [owned] = await db
+    .select({ id: studies.id })
+    .from(studies)
+    .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)))
+    .limit(1);
+  if (!owned) {
+    redirect("/");
+  }
+
   await db
     .update(studies)
     .set({
@@ -227,7 +243,7 @@ export async function updateStudy(studyId: string, input: StudyInput) {
       contextGuide: input.contextGuide,
       warmupGuide: input.warmupGuide,
     })
-    .where(eq(studies.id, studyId));
+    .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)));
 
   await saveStudySections(studyId, input.sections);
 
@@ -237,7 +253,10 @@ export async function updateStudy(studyId: string, input: StudyInput) {
 }
 
 export async function deleteStudy(studyId: string) {
-  await db.delete(studies).where(eq(studies.id, studyId));
+  const currentUser = await requireUser();
+  await db
+    .delete(studies)
+    .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)));
   revalidatePath("/");
   redirect("/");
 }
@@ -247,6 +266,16 @@ export async function addParticipant(
   name: string,
   notes: string,
 ) {
+  const currentUser = await requireUser();
+  const [owned] = await db
+    .select({ id: studies.id })
+    .from(studies)
+    .where(and(eq(studies.id, studyId), eq(studies.userId, currentUser.id)))
+    .limit(1);
+  if (!owned) {
+    throw new Error("Study not found");
+  }
+
   const trimmed = name.trim();
   if (!trimmed) {
     throw new Error("Participant name is required");
@@ -291,6 +320,16 @@ export async function completeSession(input: {
     coveredSubQuestions: boolean[];
   }[];
 }) {
+  const currentUser = await requireUser();
+  const [owned] = await db
+    .select({ id: studies.id })
+    .from(studies)
+    .where(and(eq(studies.id, input.studyId), eq(studies.userId, currentUser.id)))
+    .limit(1);
+  if (!owned) {
+    redirect("/");
+  }
+
   const [session] = await db
     .insert(sessions)
     .values({
@@ -320,6 +359,7 @@ export async function completeSession(input: {
 }
 
 export async function getSessionSummary(sessionId: string) {
+  const currentUser = await requireUser();
   const [session] = await db
     .select({
       id: sessions.id,
@@ -338,7 +378,7 @@ export async function getSessionSummary(sessionId: string) {
     .from(sessions)
     .innerJoin(participants, eq(sessions.participantId, participants.id))
     .innerJoin(studies, eq(sessions.studyId, studies.id))
-    .where(eq(sessions.id, sessionId))
+    .where(and(eq(sessions.id, sessionId), eq(studies.userId, currentUser.id)))
     .limit(1);
 
   if (!session) return null;
