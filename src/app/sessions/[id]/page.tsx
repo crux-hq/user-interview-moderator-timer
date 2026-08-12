@@ -1,0 +1,101 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AppHeader } from "@/components/app-header";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { getSessionSummary } from "@/lib/actions";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function SessionSummaryPage({ params }: Props) {
+  const { id } = await params;
+  const session = await getSessionSummary(id);
+  if (!session) notFound();
+
+  return (
+    <>
+      <AppHeader />
+      <main
+        className="mx-auto w-full max-w-5xl space-y-6 px-6 py-10"
+        crux-attr="ex-158737"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {session.clientName} · {session.studyName}
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Session with {session.participantName}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Completed{" "}
+              {session.completedAt
+                ? new Date(session.completedAt).toLocaleString()
+                : "—"}
+            </p>
+          </div>
+          <Link
+            href={`/studies/${session.studyId}`}
+            className={cn(buttonVariants({ variant: "outline" }), "inline-flex")}
+          >
+            Back to study
+          </Link>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Context notes</CardTitle>
+              <CardDescription>From the context-setting slide</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {session.contextNotes || "—"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Warm-up notes</CardTitle>
+              <CardDescription>From the warm-up slide</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {session.warmupNotes || "—"}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4">
+          {session.responses.map((response, index) => (
+            <Card key={response.id}>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  {index + 1}. {response.title}
+                </CardTitle>
+                {response.mainQuestion && (
+                  <CardDescription>{response.mainQuestion}</CardDescription>
+                )}
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm">
+                  {response.responseText || "No response captured."}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </main>
+    </>
+  );
+}
