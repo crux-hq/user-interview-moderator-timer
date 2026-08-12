@@ -1,24 +1,31 @@
 "use server";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import {
   participants,
-  sectionResponses,
+  questionResponses,
+  questions,
   sections,
   sessions,
   studies,
 } from "@/db/schema";
 
+export type QuestionInput = {
+  id?: string;
+  questionText: string;
+  moderatorNotes: string;
+  subQuestions: string;
+};
+
 export type SectionInput = {
   id?: string;
   title: string;
-  mainQuestion: string;
-  keyQuestions: string;
-  moderatorNotes: string;
+  description: string;
   durationMinutes: number;
+  questions: QuestionInput[];
 };
 
 export type StudyInput = {
@@ -29,6 +36,83 @@ export type StudyInput = {
   warmupGuide: string;
   sections: SectionInput[];
 };
+
+export type StudySection = {
+  id: string;
+  studyId: string;
+  sortOrder: number;
+  title: string;
+  description: string;
+  durationSeconds: number;
+  questions: {
+    id: string;
+    sectionId: string;
+    sortOrder: number;
+    questionText: string;
+    moderatorNotes: string;
+    subQuestions: string;
+  }[];
+};
+
+async function loadStudySections(studyId: string): Promise<StudySection[]> {
+  const studySections = await db
+    .select()
+    .from(sections)
+    .where(eq(sections.studyId, studyId))
+    .orderBy(asc(sections.sortOrder));
+
+  if (studySections.length === 0) return [];
+
+  const sectionIds = studySections.map((s) => s.id);
+  const studyQuestions = await db
+    .select()
+    .from(questions)
+    .where(inArray(questions.sectionId, sectionIds))
+    .orderBy(asc(questions.sortOrder));
+
+  return studySections.map((section) => ({
+    ...section,
+    questions: studyQuestions.filter((q) => q.sectionId === section.id),
+  }));
+}
+
+async function saveStudySections(studyId: string, inputSections: SectionInput[]) {
+  await db.delete(sections).where(eq(sections.studyId, studyId));
+
+  for (const [sectionIndex, section] of inputSections.entries()) {
+    const [createdSection] = await db
+      .insert(sections)
+      .values({
+        studyId,
+        sortOrder: sectionIndex,
+        title: section.title.trim() || `Section ${sectionIndex + 1}`,
+        description: section.description,
+        durationSeconds: Math.max(1, Math.round(section.durationMinutes * 60)),
+      })
+      .returning();
+
+    const sectionQuestions =
+      section.questions.length > 0
+        ? section.questions
+        : [
+            {
+              questionText: "",
+              moderatorNotes: "",
+              subQuestions: "",
+            },
+          ];
+
+    await db.insert(questions).values(
+      sectionQuestions.map((question, questionIndex) => ({
+        sectionId: createdSection.id,
+        sortOrder: questionIndex,
+        questionText: question.questionText,
+        moderatorNotes: question.moderatorNotes,
+        subQuestions: question.subQuestions,
+      })),
+    );
+  }
+}
 
 export async function listStudies() {
   return db
@@ -55,13 +139,10 @@ export async function getStudy(studyId: string) {
 
   if (!study) return null;
 
-  const studySections = await db
-    .select()
-    .from(sections)
-    .where(eq(sections.studyId, studyId))
-    .orderBy(asc(sections.sortOrder));
-
-  return { ...study, sections: studySections };
+  return {
+    ...study,
+    sections: await loadStudySections(studyId),
+  };
 }
 
 export async function getStudyDetail(studyId: string) {
@@ -122,17 +203,7 @@ export async function createStudy(input: StudyInput) {
     .returning();
 
   if (input.sections.length > 0) {
-    await db.insert(sections).values(
-      input.sections.map((section, index) => ({
-        studyId: study.id,
-        sortOrder: index,
-        title: section.title.trim() || `Section ${index + 1}`,
-        mainQuestion: section.mainQuestion,
-        keyQuestions: section.keyQuestions,
-        moderatorNotes: section.moderatorNotes,
-        durationSeconds: Math.max(1, Math.round(section.durationMinutes * 60)),
-      })),
-    );
+    await saveStudySections(study.id, input.sections);
   }
 
   revalidatePath("/");
@@ -151,21 +222,7 @@ export async function updateStudy(studyId: string, input: StudyInput) {
     })
     .where(eq(studies.id, studyId));
 
-  await db.delete(sections).where(eq(sections.studyId, studyId));
-
-  if (input.sections.length > 0) {
-    await db.insert(sections).values(
-      input.sections.map((section, index) => ({
-        studyId,
-        sortOrder: index,
-        title: section.title.trim() || `Section ${index + 1}`,
-        mainQuestion: section.mainQuestion,
-        keyQuestions: section.keyQuestions,
-        moderatorNotes: section.moderatorNotes,
-        durationSeconds: Math.max(1, Math.round(section.durationMinutes * 60)),
-      })),
-    );
-  }
+  await saveStudySections(studyId, input.sections);
 
   revalidatePath("/");
   revalidatePath(`/studies/${studyId}`);
@@ -220,7 +277,7 @@ export async function completeSession(input: {
   startedAt: string;
   contextNotes: string;
   warmupNotes: string;
-  responses: { sectionId: string; responseText: string }[];
+  responses: { questionId: string; responseText: string }[];
 }) {
   const [session] = await db
     .insert(sessions)
@@ -235,10 +292,10 @@ export async function completeSession(input: {
     .returning();
 
   if (input.responses.length > 0) {
-    await db.insert(sectionResponses).values(
+    await db.insert(questionResponses).values(
       input.responses.map((r) => ({
         sessionId: session.id,
-        sectionId: r.sectionId,
+        questionId: r.questionId,
         responseText: r.responseText,
       })),
     );
@@ -274,17 +331,23 @@ export async function getSessionSummary(sessionId: string) {
 
   const responseRows = await db
     .select({
-      id: sectionResponses.id,
-      sectionId: sectionResponses.sectionId,
-      responseText: sectionResponses.responseText,
-      title: sections.title,
-      mainQuestion: sections.mainQuestion,
-      sortOrder: sections.sortOrder,
+      id: questionResponses.id,
+      questionId: questionResponses.questionId,
+      responseText: questionResponses.responseText,
+      questionText: questions.questionText,
+      subQuestions: questions.subQuestions,
+      moderatorNotes: questions.moderatorNotes,
+      questionSortOrder: questions.sortOrder,
+      sectionId: sections.id,
+      sectionTitle: sections.title,
+      sectionDescription: sections.description,
+      sectionSortOrder: sections.sortOrder,
     })
-    .from(sectionResponses)
-    .innerJoin(sections, eq(sectionResponses.sectionId, sections.id))
-    .where(eq(sectionResponses.sessionId, sessionId))
-    .orderBy(asc(sections.sortOrder));
+    .from(questionResponses)
+    .innerJoin(questions, eq(questionResponses.questionId, questions.id))
+    .innerJoin(sections, eq(questions.sectionId, sections.id))
+    .where(eq(questionResponses.sessionId, sessionId))
+    .orderBy(asc(sections.sortOrder), asc(questions.sortOrder));
 
   return {
     ...session,

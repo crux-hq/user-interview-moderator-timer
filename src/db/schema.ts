@@ -38,10 +38,19 @@ export const sections = pgTable("sections", {
     .references(() => studies.id, { onDelete: "cascade" }),
   sortOrder: integer("sort_order").notNull().default(0),
   title: text("title").notNull(),
-  mainQuestion: text("main_question").notNull().default(""),
-  keyQuestions: text("key_questions").notNull().default(""),
-  moderatorNotes: text("moderator_notes").notNull().default(""),
+  description: text("description").notNull().default(""),
   durationSeconds: integer("duration_seconds").notNull().default(300),
+});
+
+export const questions = pgTable("questions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sectionId: uuid("section_id")
+    .notNull()
+    .references(() => sections.id, { onDelete: "cascade" }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  questionText: text("question_text").notNull().default(""),
+  moderatorNotes: text("moderator_notes").notNull().default(""),
+  subQuestions: text("sub_questions").notNull().default(""),
 });
 
 export const sessions = pgTable("sessions", {
@@ -60,14 +69,14 @@ export const sessions = pgTable("sessions", {
   warmupNotes: text("warmup_notes").notNull().default(""),
 });
 
-export const sectionResponses = pgTable("section_responses", {
+export const questionResponses = pgTable("question_responses", {
   id: uuid("id").defaultRandom().primaryKey(),
   sessionId: uuid("session_id")
     .notNull()
     .references(() => sessions.id, { onDelete: "cascade" }),
-  sectionId: uuid("section_id")
+  questionId: uuid("question_id")
     .notNull()
-    .references(() => sections.id, { onDelete: "cascade" }),
+    .references(() => questions.id, { onDelete: "cascade" }),
   responseText: text("response_text").notNull().default(""),
 });
 
@@ -90,7 +99,15 @@ export const sectionsRelations = relations(sections, ({ one, many }) => ({
     fields: [sections.studyId],
     references: [studies.id],
   }),
-  responses: many(sectionResponses),
+  questions: many(questions),
+}));
+
+export const questionsRelations = relations(questions, ({ one, many }) => ({
+  section: one(sections, {
+    fields: [questions.sectionId],
+    references: [sections.id],
+  }),
+  responses: many(questionResponses),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -102,19 +119,19 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
     fields: [sessions.participantId],
     references: [participants.id],
   }),
-  responses: many(sectionResponses),
+  responses: many(questionResponses),
 }));
 
-export const sectionResponsesRelations = relations(
-  sectionResponses,
+export const questionResponsesRelations = relations(
+  questionResponses,
   ({ one }) => ({
     session: one(sessions, {
-      fields: [sectionResponses.sessionId],
+      fields: [questionResponses.sessionId],
       references: [sessions.id],
     }),
-    section: one(sections, {
-      fields: [sectionResponses.sectionId],
-      references: [sections.id],
+    question: one(questions, {
+      fields: [questionResponses.questionId],
+      references: [questions.id],
     }),
   }),
 );
@@ -122,5 +139,6 @@ export const sectionResponsesRelations = relations(
 export type Study = typeof studies.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
 export type Section = typeof sections.$inferSelect;
+export type Question = typeof questions.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
-export type SectionResponse = typeof sectionResponses.$inferSelect;
+export type QuestionResponse = typeof questionResponses.$inferSelect;

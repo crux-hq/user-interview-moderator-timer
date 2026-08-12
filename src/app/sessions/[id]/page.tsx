@@ -21,6 +21,28 @@ export default async function SessionSummaryPage({ params }: Props) {
   const session = await getSessionSummary(id);
   if (!session) notFound();
 
+  const grouped = session.responses.reduce<
+    {
+      sectionId: string;
+      sectionTitle: string;
+      sectionDescription: string;
+      items: typeof session.responses;
+    }[]
+  >((acc, response) => {
+    const existing = acc.find((group) => group.sectionId === response.sectionId);
+    if (existing) {
+      existing.items.push(response);
+      return acc;
+    }
+    acc.push({
+      sectionId: response.sectionId,
+      sectionTitle: response.sectionTitle,
+      sectionDescription: response.sectionDescription,
+      items: [response],
+    });
+    return acc;
+  }, []);
+
   return (
     <>
       <AppHeader />
@@ -76,23 +98,39 @@ export default async function SessionSummaryPage({ params }: Props) {
           </Card>
         </div>
 
-        <div className="space-y-4">
-          {session.responses.map((response, index) => (
-            <Card key={response.id}>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  {index + 1}. {response.title}
-                </CardTitle>
-                {response.mainQuestion && (
-                  <CardDescription>{response.mainQuestion}</CardDescription>
+        <div className="space-y-6">
+          {grouped.map((group) => (
+            <div key={group.sectionId} className="space-y-3">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">
+                  {group.sectionTitle}
+                </h2>
+                {group.sectionDescription && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {group.sectionDescription}
+                  </p>
                 )}
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap text-sm">
-                  {response.responseText || "No response captured."}
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+              {group.items.map((response, index) => (
+                <Card key={response.id}>
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      Q{index + 1}. {response.questionText}
+                    </CardTitle>
+                    {response.subQuestions && (
+                      <CardDescription className="whitespace-pre-wrap">
+                        {response.subQuestions}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="whitespace-pre-wrap text-sm">
+                      {response.responseText || "No response captured."}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ))}
         </div>
       </main>

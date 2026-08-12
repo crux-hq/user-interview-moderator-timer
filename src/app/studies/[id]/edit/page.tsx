@@ -47,13 +47,26 @@ export default async function EditStudyPage({ params }: Props) {
             sections: study.sections.map((section) => ({
               id: section.id,
               title: section.title,
-              mainQuestion: section.mainQuestion,
-              keyQuestions: section.keyQuestions,
-              moderatorNotes: section.moderatorNotes,
+              description: section.description,
               durationMinutes: Math.max(
                 1,
                 Math.round(section.durationSeconds / 60),
               ),
+              questions:
+                section.questions.length > 0
+                  ? section.questions.map((question) => ({
+                      id: question.id,
+                      questionText: question.questionText,
+                      moderatorNotes: question.moderatorNotes,
+                      subQuestions: question.subQuestions,
+                    }))
+                  : [
+                      {
+                        questionText: "",
+                        moderatorNotes: "",
+                        subQuestions: "",
+                      },
+                    ],
             })),
           }}
         />

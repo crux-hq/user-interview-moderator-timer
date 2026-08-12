@@ -219,11 +219,11 @@ export default async function StudyDetailPage({ params }: Props) {
             <CardTitle>Script sections</CardTitle>
           </CardHeader>
           <CardContent>
-            <ol className="space-y-3">
+            <ol className="space-y-4">
               {study.sections.map((section, index) => (
                 <li
                   key={section.id}
-                  className="rounded-lg border px-3 py-2 text-sm"
+                  className="rounded-lg border px-3 py-3 text-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">
@@ -233,11 +233,25 @@ export default async function StudyDetailPage({ params }: Props) {
                       {Math.round(section.durationSeconds / 60)} min
                     </Badge>
                   </div>
-                  {section.mainQuestion && (
+                  {section.description && (
                     <p className="mt-1 text-muted-foreground">
-                      {section.mainQuestion}
+                      {section.description}
                     </p>
                   )}
+                  <ul className="mt-3 space-y-2 border-t pt-3">
+                    {section.questions.map((question, questionIndex) => (
+                      <li key={question.id}>
+                        <p className="font-medium">
+                          Q{questionIndex + 1}. {question.questionText}
+                        </p>
+                        {question.subQuestions && (
+                          <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                            {question.subQuestions}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ol>

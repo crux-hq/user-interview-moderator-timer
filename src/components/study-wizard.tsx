@@ -7,7 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createStudy, updateStudy, type SectionInput, type StudyInput } from "@/lib/actions";
+import {
+  createStudy,
+  updateStudy,
+  type QuestionInput,
+  type SectionInput,
+  type StudyInput,
+} from "@/lib/actions";
 
 type Props = {
   mode: "create" | "edit";
@@ -15,12 +21,17 @@ type Props = {
   initial?: StudyInput;
 };
 
+const emptyQuestion = (): QuestionInput => ({
+  questionText: "",
+  moderatorNotes: "",
+  subQuestions: "",
+});
+
 const emptySection = (): SectionInput => ({
   title: "",
-  mainQuestion: "",
-  keyQuestions: "",
-  moderatorNotes: "",
+  description: "",
   durationMinutes: 5,
+  questions: [emptyQuestion()],
 });
 
 const defaultInitial: StudyInput = {
@@ -47,6 +58,25 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
     }));
   }
 
+  function updateQuestion(
+    sectionIndex: number,
+    questionIndex: number,
+    patch: Partial<QuestionInput>,
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      sections: prev.sections.map((section, i) => {
+        if (i !== sectionIndex) return section;
+        return {
+          ...section,
+          questions: section.questions.map((question, j) =>
+            j === questionIndex ? { ...question, ...patch } : question,
+          ),
+        };
+      }),
+    }));
+  }
+
   function validateStep() {
     if (step === 1) {
       if (!form.clientName.trim() || !form.studyName.trim()) {
@@ -60,11 +90,23 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
     }
     if (step === 3) {
       if (form.sections.length === 0) {
-        setError("Add at least one discussion section.");
+        setError("Add at least one section.");
         return false;
       }
       if (form.sections.some((s) => !s.title.trim())) {
-        setError("Each section needs a title.");
+        setError("Each section needs a heading.");
+        return false;
+      }
+      if (form.sections.some((s) => s.questions.length === 0)) {
+        setError("Each section needs at least one question.");
+        return false;
+      }
+      if (
+        form.sections.some((s) =>
+          s.questions.some((q) => !q.questionText.trim()),
+        )
+      ) {
+        setError("Each question needs question text.");
         return false;
       }
     }
@@ -92,7 +134,6 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
           await createStudy(form);
         }
       } catch (e) {
-        // Next.js redirect() throws; let it through.
         if (
           typeof e === "object" &&
           e !== null &&
@@ -107,7 +148,7 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6" crux-attr="ex-860922">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span className={step === 1 ? "font-medium text-foreground" : ""}>
           1. Basics
@@ -205,10 +246,12 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
 
       {step === 3 && (
         <div className="space-y-4">
-          {form.sections.map((section, index) => (
-            <Card key={index}>
+          {form.sections.map((section, sectionIndex) => (
+            <Card key={sectionIndex}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-base">Section {index + 1}</CardTitle>
+                <CardTitle className="text-base">
+                  Section {sectionIndex + 1}
+                </CardTitle>
                 <Button
                   type="button"
                   variant="ghost"
@@ -217,23 +260,23 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
                   onClick={() =>
                     setForm((prev) => ({
                       ...prev,
-                      sections: prev.sections.filter((_, i) => i !== index),
+                      sections: prev.sections.filter((_, i) => i !== sectionIndex),
                     }))
                   }
                 >
                   <Trash2 className="size-4" />
                 </Button>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
                   <div className="space-y-2">
-                    <Label>Title</Label>
+                    <Label>Section heading</Label>
                     <Input
                       value={section.title}
                       onChange={(e) =>
-                        updateSection(index, { title: e.target.value })
+                        updateSection(sectionIndex, { title: e.target.value })
                       }
-                      placeholder="Discovery / Pain points"
+                      placeholder="4.2 The last pair: retrospective walkthrough"
                     />
                   </div>
                   <div className="space-y-2">
@@ -243,7 +286,7 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
                       min={1}
                       value={section.durationMinutes}
                       onChange={(e) =>
-                        updateSection(index, {
+                        updateSection(sectionIndex, {
                           durationMinutes: Number(e.target.value),
                         })
                       }
@@ -251,35 +294,100 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Main question</Label>
+                  <Label>Section description (optional)</Label>
                   <Textarea
                     rows={2}
-                    value={section.mainQuestion}
+                    value={section.description}
                     onChange={(e) =>
-                      updateSection(index, { mainQuestion: e.target.value })
+                      updateSection(sectionIndex, {
+                        description: e.target.value,
+                      })
                     }
+                    placeholder="Brief framing for this part of the interview…"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Key questions</Label>
-                  <Textarea
-                    rows={3}
-                    value={section.keyQuestions}
-                    onChange={(e) =>
-                      updateSection(index, { keyQuestions: e.target.value })
+
+                <div className="space-y-3 border-t pt-4">
+                  <div className="text-sm font-medium">Questions</div>
+                  {section.questions.map((question, questionIndex) => (
+                    <div
+                      key={questionIndex}
+                      className="space-y-3 rounded-lg border p-3"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Question {questionIndex + 1}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={section.questions.length === 1}
+                          onClick={() =>
+                            updateSection(sectionIndex, {
+                              questions: section.questions.filter(
+                                (_, i) => i !== questionIndex,
+                              ),
+                            })
+                          }
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Question</Label>
+                        <Textarea
+                          rows={2}
+                          value={question.questionText}
+                          onChange={(e) =>
+                            updateQuestion(sectionIndex, questionIndex, {
+                              questionText: e.target.value,
+                            })
+                          }
+                          placeholder="Main question for the participant…"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sub-questions (optional)</Label>
+                        <Textarea
+                          rows={3}
+                          value={question.subQuestions}
+                          onChange={(e) =>
+                            updateQuestion(sectionIndex, questionIndex, {
+                              subQuestions: e.target.value,
+                            })
+                          }
+                          placeholder="Follow-ups and probes…"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Moderator notes (optional)</Label>
+                        <Textarea
+                          rows={2}
+                          value={question.moderatorNotes}
+                          onChange={(e) =>
+                            updateQuestion(sectionIndex, questionIndex, {
+                              moderatorNotes: e.target.value,
+                            })
+                          }
+                          placeholder="Private cues for the moderator…"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updateSection(sectionIndex, {
+                        questions: [...section.questions, emptyQuestion()],
+                      })
                     }
-                    placeholder="Follow-ups and probes…"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Moderator notes</Label>
-                  <Textarea
-                    rows={2}
-                    value={section.moderatorNotes}
-                    onChange={(e) =>
-                      updateSection(index, { moderatorNotes: e.target.value })
-                    }
-                  />
+                  >
+                    <Plus className="size-4" />
+                    Add question
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -303,7 +411,12 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center justify-between">
-        <Button type="button" variant="outline" onClick={back} disabled={step === 1 || pending}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={back}
+          disabled={step === 1 || pending}
+        >
           <ArrowLeft className="size-4" />
           Back
         </Button>
@@ -314,7 +427,11 @@ export function StudyWizard({ mode, studyId, initial = defaultInitial }: Props) 
           </Button>
         ) : (
           <Button type="button" onClick={save} disabled={pending}>
-            {pending ? "Saving…" : mode === "edit" ? "Save changes" : "Create study"}
+            {pending
+              ? "Saving…"
+              : mode === "edit"
+                ? "Save changes"
+                : "Create study"}
           </Button>
         )}
       </div>

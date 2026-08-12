@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { completeSession } from "@/lib/actions";
-import type { Participant, Section, Study } from "@/db/schema";
+import { completeSession, type StudySection } from "@/lib/actions";
+import type { Participant, Study } from "@/db/schema";
 import { formatCountdown, timerTone } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
-type StudyWithSections = Study & { sections: Section[] };
+type StudyWithSections = Study & { sections: StudySection[] };
 
 type Slide =
   | { kind: "context" }
   | { kind: "warmup" }
-  | { kind: "section"; section: Section; index: number };
+  | {
+      kind: "question";
+      section: StudySection;
+      question: StudySection["questions"][number];
+      sectionIndex: number;
+      questionIndex: number;
+    };
 
 function TimerChip({
   label,
@@ -58,11 +64,15 @@ export function SessionRunner({
     () => [
       { kind: "context" },
       { kind: "warmup" },
-      ...study.sections.map((section, index) => ({
-        kind: "section" as const,
-        section,
-        index,
-      })),
+      ...study.sections.flatMap((section, sectionIndex) =>
+        section.questions.map((question, questionIndex) => ({
+          kind: "question" as const,
+          section,
+          question,
+          sectionIndex,
+          questionIndex,
+        })),
+      ),
     ],
     [study.sections],
   );
@@ -78,11 +88,12 @@ export function SessionRunner({
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const previousSectionId = useRef<string | null>(null);
 
   const slide = slides[slideIndex];
   const overallTotal = study.sessionDurationMinutes * 60;
   const sectionTotal =
-    slide.kind === "section" ? slide.section.durationSeconds : 0;
+    slide.kind === "question" ? slide.section.durationSeconds : 0;
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -93,9 +104,13 @@ export function SessionRunner({
   }, []);
 
   useEffect(() => {
-    if (slide.kind === "section") {
-      setSectionRemaining(slide.section.durationSeconds);
+    if (slide.kind === "question") {
+      if (previousSectionId.current !== slide.section.id) {
+        setSectionRemaining(slide.section.durationSeconds);
+        previousSectionId.current = slide.section.id;
+      }
     } else {
+      previousSectionId.current = null;
       setSectionRemaining(0);
     }
   }, [slideIndex, slide]);
@@ -110,10 +125,12 @@ export function SessionRunner({
           startedAt,
           contextNotes,
           warmupNotes,
-          responses: study.sections.map((section) => ({
-            sectionId: section.id,
-            responseText: responses[section.id] ?? "",
-          })),
+          responses: study.sections.flatMap((section) =>
+            section.questions.map((question) => ({
+              questionId: question.id,
+              responseText: responses[question.id] ?? "",
+            })),
+          ),
         });
       } catch (e) {
         if (
@@ -145,7 +162,7 @@ export function SessionRunner({
               remaining={overallRemaining}
               total={overallTotal}
             />
-            {slide.kind === "section" && (
+            {slide.kind === "question" && (
               <TimerChip
                 label="This section"
                 remaining={sectionRemaining}
@@ -157,14 +174,19 @@ export function SessionRunner({
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-8">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <Badge variant="secondary">
             Slide {slideIndex + 1} / {slides.length}
           </Badge>
           {slide.kind === "context" && <Badge>Context</Badge>}
           {slide.kind === "warmup" && <Badge>Warm-up</Badge>}
-          {slide.kind === "section" && (
-            <Badge>Section {slide.index + 1}</Badge>
+          {slide.kind === "question" && (
+            <>
+              <Badge>Section {slide.sectionIndex + 1}</Badge>
+              <Badge variant="outline">
+                Question {slide.questionIndex + 1}
+              </Badge>
+            </>
           )}
         </div>
 
@@ -207,36 +229,36 @@ export function SessionRunner({
             </>
           )}
 
-          {slide.kind === "section" && (
+          {slide.kind === "question" && (
             <>
-              <h1 className="text-3xl font-semibold tracking-tight">
-                {slide.section.title}
-              </h1>
-              {slide.section.mainQuestion && (
-                <div>
-                  <div className="mb-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    Main question
-                  </div>
-                  <p className="whitespace-pre-wrap text-xl leading-relaxed">
-                    {slide.section.mainQuestion}
+              <div>
+                <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+                  {slide.section.title}
+                </p>
+                {slide.section.description && (
+                  <p className="mt-2 whitespace-pre-wrap text-base text-muted-foreground">
+                    {slide.section.description}
                   </p>
-                </div>
-              )}
-              {slide.section.keyQuestions && (
+                )}
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {slide.question.questionText}
+              </h1>
+              {slide.question.subQuestions && (
                 <div>
                   <div className="mb-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    Key questions
+                    Sub-questions
                   </div>
                   <p className="whitespace-pre-wrap text-base leading-relaxed">
-                    {slide.section.keyQuestions}
+                    {slide.question.subQuestions}
                   </p>
                 </div>
               )}
-              {slide.section.moderatorNotes && (
+              {slide.question.moderatorNotes && (
                 <div className="rounded-lg border bg-muted/40 p-4">
                   <div className="mb-1 text-sm font-medium">Moderator notes</div>
                   <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                    {slide.section.moderatorNotes}
+                    {slide.question.moderatorNotes}
                   </p>
                 </div>
               )}
@@ -244,11 +266,11 @@ export function SessionRunner({
                 <div className="text-sm font-medium">Participant response</div>
                 <Textarea
                   rows={6}
-                  value={responses[slide.section.id] ?? ""}
+                  value={responses[slide.question.id] ?? ""}
                   onChange={(e) =>
                     setResponses((prev) => ({
                       ...prev,
-                      [slide.section.id]: e.target.value,
+                      [slide.question.id]: e.target.value,
                     }))
                   }
                   placeholder="Optional — capture quotes, themes, and answers…"
